@@ -1,0 +1,52 @@
+version: "3.7"
+services:
+
+  php:
+    build:
+      args:
+        user: sammy
+        uid: 1000
+      context: ./docker/php/
+      dockerfile: Dockerfile
+    image: forum_app
+    container_name: forum_app-php
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www
+    networks:
+      - forum_app
+  db:
+    image: postgres:12
+    container_name: forum_app-db
+    restart: unless-stopped
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: forum
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: forum_app
+    volumes:
+        - ./docker/db/db.sql:/docker-entrypoint-initdb.d/db.sql
+        - postgresql_data:/var/lib/postgresql/data
+    networks:
+      - forum_app
+  nginx:
+    image: nginx:alpine
+    container_name: forum_app-nginx
+    restart: unless-stopped
+    ports:
+      - 8300:80
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx:/etc/nginx/conf.d/
+    networks:
+      - forum_app
+
+volumes:
+  postgresql_data:
+    driver: local
+
+networks:
+  forum_app:
+    driver: bridge
