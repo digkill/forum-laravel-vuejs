@@ -10,8 +10,7 @@ class JWT
 {
 
     protected $except = [
-        'login',
-        'signup',
+
     ];
 
     /**

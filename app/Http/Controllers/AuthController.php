@@ -6,12 +6,20 @@ use App\Http\Requests\SignupRequest;
 use App\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
+    private $guard;
+
+    public function __construct()
+    {
+        $this->middleware('auth:api', ['except' => ['login', 'signup']]);
+        $this->guard = "api";
+    }
+
+
     /**  Get a JWT via given credentials.
      * @param Request $request
      * @return JsonResponse
@@ -58,7 +66,7 @@ class AuthController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => auth()->factory()->getTTL() * 60,
+            'expires_in' => auth($this->guard)->factory()->getTTL() * 60,
             'user' => auth()->user()->name,
             'role' => auth()->user()->role
         ]);
@@ -69,7 +77,6 @@ class AuthController extends Controller
      */
     public function me()
     {
-        //return response()->json(auth()->user());
         $user = JWTAuth::user();
         if (count((array)$user) > 0) {
             return response()->json(['status' => 'success', 'user' => $user, 'id' => $user->id]);
@@ -80,11 +87,7 @@ class AuthController extends Controller
 
     public function signup(SignupRequest $request)
     {
-        new User([
-            'name' => request('name'),
-            'email' => request('email'),
-            'password' => Hash::make(request('password'))
-        ]);
+        User::create($request->all());
         return $this->login($request);
     }
 }
